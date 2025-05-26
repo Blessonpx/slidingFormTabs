@@ -1,10 +1,73 @@
 <template>
-    <h1>Log Out</h1>
+<h1>Sign Out</h1>
+
+  <h3 v-if="error" class="warning">{{errorMessage}}</h3>
+  <form @submit.prevent="logIn">
+    <label>Username: </label>
+    <input type="text" name="username" id="username" v-model="username">
+    <label>Password: </label>
+    <input type="password" name="password" id="password" v-model="password">
+    <button>Sign Out</button>
+  </form>
 </template>
 <script>
+import { ref } from 'vue';
+import router from './router/index';
+import config from './config.js'
+
 export default {
-    name: 'LogOut'
-}
+  name: 'LogOut',
+  setup() {
+    const username = ref('');
+    const password = ref('');
+    const error = ref(false);
+    const errorMessage = ref('');
+    async function logIn() {
+      if (username.value !== '' && password.value !== '') {
+        var result = await talkToServer(username.value, password.value);
+
+        if (result === "SUCCESS") {
+          error.value = false;
+          errorMessage.value = '';
+          router.push('/');
+        } else {
+          error.value = true;
+          errorMessage.value = 'Something went wrong. Are you sure you have an account?';
+        }
+      } else {
+        error.value = true;
+        errorMessage.value = "Username and Password fields can't be empty!";
+      }
+
+    }
+    async function talkToServer(username, password) {
+      var data = JSON.stringify("FAILURE");
+      await fetch(`${config.apiBaseUrl}/users/logout`, {
+        method: "post",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "username": username,
+          "password": password
+        }),
+      })
+      .then(resp => resp.json() )
+      .then(dataJson => data = dataJson)
+      .catch(err => console.log(err));
+      return data;
+    }
+    return {
+      username,
+      password,
+      error,
+      errorMessage,
+      logIn,
+    };
+  }
+};
+
 </script>
 <style>
 body {
